@@ -11,58 +11,15 @@ import Dialog from 'react-toolbox/lib/dialog';
 
 import styles from './theme/styles.scss';
 
-class DialogTestButton extends React.Component {
-  state = {
-    active: false,
-    showList: false
-  };
-
-  handleToggle = () => {
-    this.setState({active: !this.state.active});
-  }
-
-  showList = () => {
-    this.setState({active: !this.state.active});
-    this.setState({showList: !this.state.showList});
-  }
-
-  actions = [
-    { label: "Cancel", onClick: this.handleToggle },
-    { label: "Got it", onClick: this.showList }
-  ];
-
-  render () {
-    var list = "";
-    if (this.state.showList) {
-      list = <ListView />
-    }
-    return (
-      <div>
-        <Button icon='add' label='Add to trainer' onClick={this.handleToggle} primary/>
-        <Dialog
-          actions={this.actions}
-          active={this.state.active}
-          onEscKeyDown={this.handleToggle}
-          onOverlayClick={this.handleToggle}
-          title='Training in progress'
-        >
-          <ProgressBar type="circular" mode="indeterminate" />
-        </Dialog>
-        {list}
-      </div>
-    );
-  }
-}
-
 class ListView extends React.Component {
 
   state = {
     db: [
       [
-        ["A?"], ["A-A", "A-B"]
+        ["How are you guys?"], ["request_A", "request_B"]
       ],
       [
-        ["B?"],["B-A", "B-B","B-C", "B-D"]
+        ["Ready for the meeting?"],["request_A", "request_B","request_C", "request_D"]
       ]
     ],
     dialogActive: false,
