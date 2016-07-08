@@ -57,7 +57,6 @@ class DialogTestButton extends React.Component {
 class ListView extends React.Component {
 
   state = {
-    array: ["A", "B"],
     db: [
       [
         ["A?"], ["A-A", "A-B"]
@@ -65,17 +64,46 @@ class ListView extends React.Component {
       [
         ["B?"],["B-A", "B-B","B-C", "B-D"]
       ]
-    ]
+    ],
+    dialogActive: false,
+    newClassName: '',
+    addIndex: 0
   };
 
-  handleDeleteClick = (indexChip, indexItem) => {  
+  handleDeleteClick = (indexChip, indexItem) => {
     delete this.state.db[indexItem][1][indexChip]
     this.setState({db: this.state.db});
   };
 
-  handleAddClick = (index) => {
-    console.log("Add button clicked at index: "+index);
+  handleAddClick = (indexItem) => {
+    this.setState({dialogActive: !this.state.dialogActive});
+    this.setState({addIndex: indexItem});
+    console.log("Add button clicked at index: "+indexItem);
+    // this.state.db[indexItem][1].push("new class");
+    // this.setState({db: this.state.db});
   };
+  cancelClicked = () => {
+    this.setState({dialogActive: !this.state.dialogActive});
+    console.log("Cancel clicked");
+  };
+  saveClicked = () => {
+    var name = this.state.newClassName;
+    var indexToAdd = this.state.addIndex;
+    this.state.db[indexToAdd][1].push(name);
+    this.setState({db: this.state.db});
+    this.setState({dialogActive: !this.state.dialogActive});
+    console.log("save clicked");
+    this.setState({newClassName: ''});
+  };
+
+  handleChange = (newClassName, value) => {
+    this.setState({...this.state, [newClassName]: value});
+  };
+
+  actions = [
+    { label: "Cancel", onClick: this.cancelClicked },
+    { label: "Save", onClick: this.saveClicked }
+  ];
 
   render () {
     var that = this;
@@ -84,13 +112,31 @@ class ListView extends React.Component {
         <ItemsResult key={index} information={info} indexItem={index} functionAddChip={that.handleAddClick} functionDeleteChip={that.handleDeleteClick}/>
       );
     });
-    return (
+    var showListView = this.props.showListView;
+    var listView = (
       <List selectable ripple>
+      <Dialog
+          actions={this.actions}
+          active={this.state.dialogActive}
+          onEscKeyDown={this.cancelClicked}
+          onOverlayClick={this.cancelClicked}
+          title='Add class'>
+        <p> You are now able to add a class.</p>
+        <Input type='text' label='Name' name='name' value={this.state.newClassName} onChange={this.handleChange.bind(this, 'newClassName')} />
+      </Dialog>
         <ListSubHeader caption='Sentences to train' />
         {DB}
         <ListDivider />
         <ListItem caption='Send to Watson' leftIcon='send' />
       </List>
+    );
+    if (!showListView) {
+      listView = "";
+    }
+    return (
+      <div>
+        {listView}
+      </div>
     );
   }
 }
@@ -105,7 +151,6 @@ class ChipResult extends React.Component {
     this.setState({indexItem: this.props.indexItem});
   };
   componentWillReceiveProps () {
-    console.log("[Chips] New props are comming!");
     this.setState({listOfClass: this.props.listOfClass});
     this.setState({indexItem: this.props.indexItem});
   }
@@ -140,7 +185,6 @@ class ItemsResult extends React.Component {
   };
 
   componentWillReceiveProps () {
-    console.log("[Item] New props are comming!");
     this.setState({sentence: this.props.information[0]});
     this.setState({listOfClass: this.props.information[1]});
     this.setState({indexItem: this.props.indexItem});
@@ -183,15 +227,33 @@ const AppBarWatson = () => (
   </AppBar>
 );
 
+class AppMain extends React.Component {
+
+  state = {
+    showListView: false
+  };
+
+  handleTrain = () => {
+    console.log("train it!");
+    this.setState({showListView: !this.state.showListView});
+  }
+
+  render () {
+    return (
+      <div>
+        <AppBarWatson />
+        <section style={{ padding: 20 }}>
+          <InputMessageConversation />
+          <Button icon='send' label='Train it!' onClick={this.handleTrain} flat primary />
+          <ListView showListView={this.state.showListView}/>
+        </section>
+      </div>
+    );
+  };
+}
+
 const App = () => (
-  <div>
-    <AppBarWatson />
-    <section style={{ padding: 20 }}>
-      <InputMessageConversation />
-      <Button icon='send' label='Train it!' flat primary />
-      <ListView />
-    </section>
-  </div>
+  <AppMain />
 );
 
 export default App;
