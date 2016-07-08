@@ -68,6 +68,8 @@
   },
   "repository": "github:react-toolbox/react-toolbox-example",
   "dependencies": {
-    "react-toolbox": "git+https://github.com/react-toolbox/react-toolbox.git#dev"
+    "body-parser": "^1.15.2",
+    "react-toolbox": "git+https://github.com/react-toolbox/react-toolbox.git#dev",
+    "watson-developer-cloud": "^1.12.0"
   }
 }
