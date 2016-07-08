@@ -39,14 +39,20 @@ app.post('/watson', function(req, res, next) {
   console.log("Req.data: "+req.body.text);
   var arrayMessages = req.body.text;
   var length = arrayMessages.length;
-  var jsonon = {};
+  var jsonObj = {};
   var index = 0;
+  var final_length = length;
 
   for (i = 0; i < length; i++) {
     var message = arrayMessages[i];
     if (message.length == 0) {
+      final_length -= 1;
+      console.log("MESSAGE EMPTY");
       continue;
+    } else {
+      console.log("MESSAGE: "+ message);
     }
+    console.log("END");
     var params = {
       classifier: process.env.CLASSIFIER_ID || classifier_id, // pre-trained classifier
       text: arrayMessages[i]
@@ -55,10 +61,10 @@ app.post('/watson', function(req, res, next) {
       if (err)
         return next(err);
       else
-        jsonon[index] = results;
+        jsonObj[index] = results;
         index += 1;
-        if (index == length) {
-          res.json(JSON.stringify(jsonon));
+        if (index == final_length) {
+          res.json(JSON.stringify(jsonObj));
         }
     });
   }

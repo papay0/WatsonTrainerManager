@@ -193,6 +193,7 @@ class AppMain extends React.Component {
     if (msgs.length > 0) {
       console.log("Messages: "+msgs);
       var arrayMessages = msgs.split('\n');
+      arrayMessages = arrayMessages.filter(function(e){return e}); 
       this.sendPostRequest(arrayMessages);
     }
   };
@@ -203,6 +204,7 @@ class AppMain extends React.Component {
     .done(function onSucess(answers){
       //var DB = new Array(arrayMessages.length);
       var DB = [];
+      const NUMBER_CHIPS = 3;
       console.log("OK: "+JSON.stringify(answers));
       var obj = JSON.parse(answers);
       for (var i = 0; i < arrayMessages.length; i++) {
@@ -215,8 +217,10 @@ class AppMain extends React.Component {
         for (var j = 0; j < nb_classes; j++) {
           var name = obj[i].classes[j].class_name;
           var confidence = (obj[i].classes[j].confidence*100).toFixed(1)
-          console.log("Name: "+obj[i].classes[j].class_name+ ", %: "+(obj[i].classes[j].confidence*100).toFixed(1));
-          CLASSES[j] = [name, confidence];
+          if (j < NUMBER_CHIPS) {
+            console.log("Name: "+obj[i].classes[j].class_name+ ", %: "+(obj[i].classes[j].confidence*100).toFixed(1));
+            CLASSES[j] = [name, confidence];
+          }
         }
         DB[i] = [[text], CLASSES]
       }
