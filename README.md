@@ -6,4 +6,4 @@
 3. Visit `localhost:8080` in your browser
 
 
-[Imgur](http://i.imgur.com/FS4BBGu.gif?1)
+![](http://i.imgur.com/FS4BBGu.gif?1)
