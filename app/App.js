@@ -45,7 +45,7 @@ class ListView extends React.Component {
   saveClicked = () => {
     var name = this.state.newClassName;
     var indexToAdd = this.state.addIndex;
-    this.state.db[indexToAdd][1].push(name);
+    this.state.db[indexToAdd][1].push([name]);
     this.setState({db: this.state.db});
     this.setState({dialogActive: !this.state.dialogActive});
     console.log("save clicked");
@@ -123,6 +123,10 @@ class ChipResult extends React.Component {
       var name = classTitle[0];
       var confidence = classTitle[1];
       var response = name + " - " + confidence + "%"
+      if (confidence === undefined) {
+        console.log("confidence: "+confidence);
+        response = name;
+      }
       return (
         <Chip key={index} deletable onDeleteClick={() => that.props.functionDeleteChip(index, that.state.indexItem)} >
         {response}
@@ -193,7 +197,7 @@ class AppMain extends React.Component {
     if (msgs.length > 0) {
       console.log("Messages: "+msgs);
       var arrayMessages = msgs.split('\n');
-      arrayMessages = arrayMessages.filter(function(e){return e}); 
+      arrayMessages = arrayMessages.filter(function(e){return e});
       this.sendPostRequest(arrayMessages);
     }
   };

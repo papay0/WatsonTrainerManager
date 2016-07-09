@@ -4,3 +4,6 @@
 1. Clone this repository
 2. Run `npm install && npm start`
 3. Visit `localhost:8080` in your browser
+
+
+[Imgur](http://i.imgur.com/FS4BBGu.gif?1)
