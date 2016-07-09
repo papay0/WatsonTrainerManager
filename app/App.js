@@ -7,6 +7,7 @@ import ProgressBar from 'react-toolbox/lib/progress_bar';
 import Chip from 'react-toolbox/lib/chip';
 import Avatar from 'react-toolbox/lib/avatar';
 import Dialog from 'react-toolbox/lib/dialog';
+import Snackbar from 'react-toolbox/lib/snackbar';
 
 import styles from './theme/styles.scss';
 
@@ -122,19 +123,19 @@ class ListView extends React.Component {
     var showListView = this.props.showListView;
     var listView = (
       <List selectable ripple>
-      <Dialog
-      actions={this.actions}
-      active={this.state.dialogActive}
-      onEscKeyDown={this.cancelClicked}
-      onOverlayClick={this.cancelClicked}
-      title='Add class'>
-      <p> You are now able to add a class.</p>
-      <Input type='text' label='Name' name='name' value={this.state.newClassName} onChange={this.handleChange.bind(this, 'newClassName')} />
-      </Dialog>
-      <ListSubHeader caption='Sentences to train' />
-      {DB}
-      <ListDivider />
-      <ListItem caption='Send to Watson' leftIcon='send' onClick={() => this.handleOnClickWatson()} />
+        <Dialog
+          actions={this.actions}
+          active={this.state.dialogActive}
+          onEscKeyDown={this.cancelClicked}
+          onOverlayClick={this.cancelClicked}
+          title='Add class'>
+          <p> You are now able to add a class.</p>
+          <Input type='text' label='Name' name='name' value={this.state.newClassName} onChange={this.handleChange.bind(this, 'newClassName')} />
+        </Dialog>
+        <ListSubHeader caption='Sentences to train' />
+        {DB}
+        <ListDivider />
+        <ListItem caption='Send to Watson' leftIcon='send' onClick={() => this.handleOnClickWatson()} />
       </List>
     );
     if (!showListView) {
@@ -233,7 +234,10 @@ class AppMain extends React.Component {
   state = {
     showListView: false,
     messages: '',
-    db: []
+    db: [],
+    activeSnackbar: false,
+    messageSnapbar: '',
+    styleSnackbar: styles.SnackbarSuccess
   };
 
   handleTrain = () => {
@@ -251,6 +255,8 @@ class AppMain extends React.Component {
     $.post('/api/watson', {text: arrayMessages})
     .done(function onSucess(answers){
       //var DB = new Array(arrayMessages.length);
+      that.setState({activeSnackbar: true});
+      that.setState({messageSnapbar: 'Training successful'});
       var DB = [];
       const NUMBER_CHIPS = 3;
       //console.log("OK: "+JSON.stringify(answers));
@@ -284,6 +290,11 @@ class AppMain extends React.Component {
     this.setState({...this.state, [name]: value});
   };
 
+  handleSnackbarTimeoutOrClick = () => {
+    console.log('handleSnackbarClick');
+    this.setState({ activeSnackbar: false });
+  };
+
   render () {
     return (
       <div>
@@ -293,6 +304,17 @@ class AppMain extends React.Component {
       <Button icon='send' label='Train it!' onClick={this.handleTrain} flat primary />
       <ListView showListView={this.state.showListView} db={this.state.db} />
       </section>
+      <Snackbar
+        action='Dismiss'
+        active={this.state.activeSnackbar}
+        icon='question_answer'
+        label={this.state.messageSnapbar}
+        timeout={3000}
+        onClick={this.handleSnackbarTimeoutOrClick}
+        onTimeout={this.handleSnackbarTimeoutOrClick}
+        type='warning'
+        className={this.state.styleSnackbar}
+      />
       </div>
     );
   };

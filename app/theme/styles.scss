@@ -1,3 +1,11 @@
 .rightButton {
   flex: 1;
 }
+
+.SnackbarSuccess {
+  background-color: $color-primary;
+}
+
+.SnackbarError {
+  background-color: #ff0000;
+}

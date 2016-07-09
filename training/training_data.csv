@@ -3,3 +3,4 @@
 "Should we start?",thumbs_up,thumbs_down
 "How are you?",thumbs_up,thumbs_down,important
 "Let's go?",thumbs_up,thumbs_down,great_job
+"A",meeting_request,progress_report
