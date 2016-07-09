@@ -8,6 +8,7 @@ import Chip from 'react-toolbox/lib/chip';
 import Avatar from 'react-toolbox/lib/avatar';
 import Dialog from 'react-toolbox/lib/dialog';
 import Snackbar from 'react-toolbox/lib/snackbar';
+import Autocomplete from 'react-toolbox/lib/autocomplete';
 
 import styles from './theme/styles.scss';
 
@@ -24,7 +25,9 @@ class ListView extends React.Component {
     ],
     dialogActive: false,
     newClassName: '',
-    addIndex: 0
+    addIndex: 0,
+    classes: [],
+    newClassesName: []
   };
 
   handleDeleteClick = (indexChip, indexItem) => {
@@ -36,6 +39,7 @@ class ListView extends React.Component {
     this.setState({dialogActive: !this.state.dialogActive});
     this.setState({addIndex: indexItem});
     console.log("Add button clicked at index: "+indexItem);
+    this.getClasses();
   };
 
   cancelClicked = () => {
@@ -44,13 +48,16 @@ class ListView extends React.Component {
   };
 
   saveClicked = () => {
-    var name = this.state.newClassName;
+    //var name = this.state.newClassName;
+    var names = this.state.newClassesName;
     var indexToAdd = this.state.addIndex;
-    this.state.db[indexToAdd][1].push([name]);
+    for (var i in names) {
+        this.state.db[indexToAdd][1].push([names[i]]);
+    }
     this.setState({db: this.state.db});
     this.setState({dialogActive: !this.state.dialogActive});
     console.log("save clicked");
-    this.setState({newClassName: ''});
+    this.setState({newClassesName: ''});
   };
 
   handleChange = (newClassName, value) => {
@@ -62,7 +69,7 @@ class ListView extends React.Component {
     { label: "Save", onClick: this.saveClicked }
   ];
 
-  mise_en_page_ouvre_fichier_met_a_la_fin = (db) => {
+  getArrayOfLines = (db) => {
     var str_line = "";
     var message = "";
     var a_class = "";
@@ -73,8 +80,8 @@ class ListView extends React.Component {
       message = "";
       a_class = "";
       message = db_filter[i][0];
-      str_line += "\""+message+"\"";
       for (var j = 0; j < db_filter[i][1].length; j++) {
+        str_line = "\""+message+"\"";
         if (db_filter[i][1][j] !== undefined) {
           if (db_filter[i][1][j].length > 1) {
             a_class = db_filter[i][1][j][0];
@@ -82,16 +89,17 @@ class ListView extends React.Component {
             a_class = db_filter[i][1][j];
           }
           str_line += ","+a_class;
+          arrayOfLines.push(str_line);
         }
       }
-      arrayOfLines.push(str_line);
+      //arrayOfLines.push(str_line);
       //console.log("Line in file: "+str_line);
     }
     return arrayOfLines;
   };
 
   handleOnClickWatson = () => {
-    var arrayOfLines = this.mise_en_page_ouvre_fichier_met_a_la_fin(this.state.db);
+    var arrayOfLines = this.getArrayOfLines(this.state.db);
     //console.log("Array of lines: "+arrayOfLines);
     this.sendArrayOfLinesToServer(arrayOfLines);
   };
@@ -113,6 +121,25 @@ class ListView extends React.Component {
     //this.setState({db: this.state.db});
   };
 
+  getClasses = () => {
+    console.log("classes: "+this.state.classes);
+    var that = this;
+    $.get('/api/classes')
+    .done(function onSucess(answers){
+      //console.log("OK GET CLASSES: ", answers);
+      var obj = JSON.parse(answers);
+      that.setState({classes: obj[0]});
+    })
+    .fail(function onError(error) {
+      console.log("PAS OK: "+JSON.stringify(error));
+    });
+  }
+
+  handleMultipleChange = (value) => {
+    console.log("Classes name: ", value);
+    this.setState({newClassesName: value});
+  };
+
   render () {
     var that = this;
     var DB = this.state.db.map(function(info, index) {
@@ -123,19 +150,27 @@ class ListView extends React.Component {
     var showListView = this.props.showListView;
     var listView = (
       <List selectable ripple>
-        <Dialog
-          actions={this.actions}
-          active={this.state.dialogActive}
-          onEscKeyDown={this.cancelClicked}
-          onOverlayClick={this.cancelClicked}
-          title='Add class'>
-          <p> You are now able to add a class.</p>
-          <Input type='text' label='Name' name='name' value={this.state.newClassName} onChange={this.handleChange.bind(this, 'newClassName')} />
-        </Dialog>
-        <ListSubHeader caption='Sentences to train' />
-        {DB}
-        <ListDivider />
-        <ListItem caption='Send to Watson' leftIcon='send' onClick={() => this.handleOnClickWatson()} />
+      <Dialog
+        actions={this.actions}
+        active={this.state.dialogActive}
+        onEscKeyDown={this.cancelClicked}
+        onOverlayClick={this.cancelClicked}
+        title='Add class'>
+        <p> You are now able to add a class.</p>
+          <Autocomplete
+            direction="down"
+            selectedPosition="above"
+            label="Choose a class"
+            onChange={this.handleMultipleChange}
+            source={this.state.classes}
+            value={this.state.newClassesName}
+            multiple={true}
+        />
+      </Dialog>
+      <ListSubHeader caption='Sentences to train' />
+      {DB}
+      <ListDivider />
+      <ListItem caption='Send to Watson' leftIcon='send' onClick={() => this.handleOnClickWatson()} />
       </List>
     );
     if (!showListView) {
@@ -259,7 +294,7 @@ class AppMain extends React.Component {
       that.setState({messageSnapbar: 'Training successful'});
       var DB = [];
       const NUMBER_CHIPS = 3;
-      //console.log("OK: "+JSON.stringify(answers));
+      console.log("OK: "+JSON.stringify(answers));
       var obj = JSON.parse(answers);
       for (var i = 0; i < arrayMessages.length; i++) {
         var array_classes = obj[i].classes;
@@ -305,15 +340,15 @@ class AppMain extends React.Component {
       <ListView showListView={this.state.showListView} db={this.state.db} />
       </section>
       <Snackbar
-        action='Dismiss'
-        active={this.state.activeSnackbar}
-        icon='question_answer'
-        label={this.state.messageSnapbar}
-        timeout={3000}
-        onClick={this.handleSnackbarTimeoutOrClick}
-        onTimeout={this.handleSnackbarTimeoutOrClick}
-        type='warning'
-        className={this.state.styleSnackbar}
+      action='Dismiss'
+      active={this.state.activeSnackbar}
+      icon='question_answer'
+      label={this.state.messageSnapbar}
+      timeout={3000}
+      onClick={this.handleSnackbarTimeoutOrClick}
+      onTimeout={this.handleSnackbarTimeoutOrClick}
+      type='warning'
+      className={this.state.styleSnackbar}
       />
       </div>
     );

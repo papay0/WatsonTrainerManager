@@ -19,6 +19,7 @@ const NUMBER_OF_MESSAGE_BEFORE_SENDING_TO_CLASSIFIER = 3;
 var counter=0;
 var classifierNameNumber=0;
 var nextID="";
+var setOfClasses = new Set();
 
 app.use(require('webpack-dev-middleware')(compiler, {
   noInfo: true,
@@ -44,6 +45,16 @@ sendToWatson = () => {
   console.log("I send the new classifier.csv!")
 };
 
+app.get('/api/classes', function(req, res, next) {
+  var obj = {};
+  // for (var i = 0; i < setOfClasses.size; i++) {
+  //   obj[i] = setOfClasses[i];
+  // }
+  obj[0] = Array.from(setOfClasses);
+  console.log("/api/classes: ", JSON.stringify(obj));
+  res.json(JSON.stringify(obj));
+});
+
 app.post('/api/trainer', function(req, res, next) {
   var that = this;
   var arrayOfLines=req.body.arrayOfLines;
@@ -58,40 +69,42 @@ app.post('/api/trainer', function(req, res, next) {
         res.status(500).send('Oups, problem when appending to the file');
       }
       //console.log("Success to append to file");
+      counter++;
+      console.log("Counter id: "+counter);
+      var params = {
+        language:'en',
+        name: classifierNameNumber+'',
+        training_data:fs.createReadStream('./training/training_data.csv')
+      };
+      classifierNameNumber++;
+      if(counter == NUMBER_OF_MESSAGE_BEFORE_SENDING_TO_CLASSIFIER){
+        nlClassifier.create(params,function(err,response){
+          if (err) {
+            console.log("Error: "+JSON.stringify(err));
+          } else {
+            nextID = response.classifier_id;
+            console.log("nextID: "+nextID);
+            counter = 0;
+          }
+        });
+        counter=0;
+      }
     })
   }
-  counter++;
-  console.log("Counter id: "+counter);
-  var params = {
-    language:'en',
-    name: classifierNameNumber+'',
-    training_data:fs.createReadStream('./training/training_data.csv')
-  };
-  classifierNameNumber++;
-  if(counter == NUMBER_OF_MESSAGE_BEFORE_SENDING_TO_CLASSIFIER){
-    nlClassifier.create(params,function(err,response){
-      if (err) {
-        console.log("Error: "+JSON.stringify(err));
-      } else {
-        nextID = response.classifier_id;
-        console.log("nextID: "+nextID);
-        counter = 0;
-      }
-    });
-    counter=0;
-  } else {
-    res.send('Append was successful');
-  }
+  res.send('Append was successful');
 });
 
 app.post('/api/watson', function(req, res, next) {
+  console.log("My set of classes: ", setOfClasses);
   var arrayMessages = req.body.text;
   var length = arrayMessages.length;
   var jsonObj = {};
   var index = 0;
   var final_length = length;
+  var that = this;
 
   if(nextID!=""){
+    console.log("IN nextID");
     var statusOfNext;
     nlClassifier.status({ classifier_id: nextID },
       function(err, response) {
@@ -103,6 +116,8 @@ app.post('/api/watson', function(req, res, next) {
         }
       }
     );
+  } else {
+    console.log("NOT IN nextID");
   }
 
   if( statusOfNext === "Available" ) {
@@ -129,12 +144,27 @@ app.post('/api/watson', function(req, res, next) {
         jsonObj[index] = results;
         index += 1;
         if (index == final_length) {
+          that.keepTrackOfClassesForAjaxRequest(jsonObj, final_length);
           res.json(JSON.stringify(jsonObj));
         }
       }
     });
   }
 });
+
+keepTrackOfClassesForAjaxRequest = (ObjClasses, numberOfClasses) => {
+  console.log("ObjClasses: ",JSON.stringify(ObjClasses), " numberOfClasses: ", numberOfClasses);
+  var classes = [];
+  var name = "";
+  for (var i = 0; i < numberOfClasses; i++) {
+    classes = ObjClasses[i].classes;
+    for (var j = 0; j < classes.length; j++) {
+      name = classes[j].class_name;
+      // ok if Set() is implemented with hashtable in Javascript, otherwase it's a disaster!
+      setOfClasses.add(name);
+    }
+  }
+};
 
 app.use(require('webpack-hot-middleware')(compiler));
 
