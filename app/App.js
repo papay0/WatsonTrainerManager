@@ -61,12 +61,56 @@ class ListView extends React.Component {
     { label: "Save", onClick: this.saveClicked }
   ];
 
+  mise_en_page_ouvre_fichier_met_a_la_fin = (db) => {
+    var str_line = "";
+    var message = "";
+    var a_class = "";
+    var db_filter = db.filter(function(e){return e});
+    var arrayOfLines = [];
+    for (var i = 0; i < db_filter.length; i++) {
+      str_line = "";
+      message = "";
+      a_class = "";
+      message = db_filter[i][0];
+      str_line += "\""+message+"\"";
+      for (var j = 0; j < db_filter[i][1].length; j++) {
+        if (db_filter[i][1][j] !== undefined) {
+          if (db_filter[i][1][j].length > 1) {
+            a_class = db_filter[i][1][j][0];
+          } else {
+            a_class = db_filter[i][1][j];
+          }
+          str_line += ","+a_class;
+        }
+      }
+      arrayOfLines.push(str_line);
+      //console.log("Line in file: "+str_line);
+    }
+    return arrayOfLines;
+  };
+
+  handleOnClickWatson = () => {
+    var arrayOfLines = this.mise_en_page_ouvre_fichier_met_a_la_fin(this.state.db);
+    //console.log("Array of lines: "+arrayOfLines);
+    this.sendArrayOfLinesToServer(arrayOfLines);
+  };
+
+  sendArrayOfLinesToServer = (arrayOfLines) => {
+    var that = this;
+    $.post('/api/trainer', {arrayOfLines: arrayOfLines})
+    .done(function onSucess(answers){
+      console.log("OK: "+JSON.stringify(answers));
+    })
+    .fail(function onError(error) {
+      console.log("PAS OK: "+JSON.stringify(error));
+    });
+  }
+
   componentWillReceiveProps (nextProps) {
-    console.log("Received props: "+nextProps.db);
+    //dconsole.log("Received props: "+nextProps.db);
     this.setState({db: nextProps.db});
     //this.setState({db: this.state.db});
   };
-
 
   render () {
     var that = this;
@@ -90,7 +134,7 @@ class ListView extends React.Component {
       <ListSubHeader caption='Sentences to train' />
       {DB}
       <ListDivider />
-      <ListItem caption='Send to Watson' leftIcon='send' />
+      <ListItem caption='Send to Watson' leftIcon='send' onClick={() => this.handleOnClickWatson()} />
       </List>
     );
     if (!showListView) {
@@ -204,31 +248,30 @@ class AppMain extends React.Component {
 
   sendPostRequest = (arrayMessages) => {
     var that = this;
-    $.post('/watson', {text: arrayMessages})
+    $.post('/api/watson', {text: arrayMessages})
     .done(function onSucess(answers){
       //var DB = new Array(arrayMessages.length);
       var DB = [];
       const NUMBER_CHIPS = 3;
-      console.log("OK: "+JSON.stringify(answers));
+      //console.log("OK: "+JSON.stringify(answers));
       var obj = JSON.parse(answers);
       for (var i = 0; i < arrayMessages.length; i++) {
         var array_classes = obj[i].classes;
         var nb_classes = array_classes.length;
         var text = obj[i].text;
-        console.log("text: "+text);
+        //console.log("text: "+text);
         //DB[i] = new Array[nb_classes];
         var CLASSES = [];
         for (var j = 0; j < nb_classes; j++) {
           var name = obj[i].classes[j].class_name;
           var confidence = (obj[i].classes[j].confidence*100).toFixed(1)
           if (j < NUMBER_CHIPS) {
-            console.log("Name: "+obj[i].classes[j].class_name+ ", %: "+(obj[i].classes[j].confidence*100).toFixed(1));
+            //console.log("Name: "+obj[i].classes[j].class_name+ ", %: "+(obj[i].classes[j].confidence*100).toFixed(1));
             CLASSES[j] = [name, confidence];
           }
         }
         DB[i] = [[text], CLASSES]
       }
-      console.log("R: "+DB);
       that.setState({db: DB});
       that.setState({showListView: true});
     })
