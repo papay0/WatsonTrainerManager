@@ -281,11 +281,11 @@ class AppMain extends React.Component {
       console.log("Messages: "+msgs);
       var arrayMessages = msgs.split('\n');
       arrayMessages = arrayMessages.filter(function(e){return e});
-      this.sendPostRequest(arrayMessages);
+      this.sendPostRequestWithMessagesToTrain(arrayMessages);
     }
   };
 
-  sendPostRequest = (arrayMessages) => {
+  sendPostRequestWithMessagesToTrain = (arrayMessages) => {
     var that = this;
     $.post('/api/watson', {text: arrayMessages})
     .done(function onSucess(answers){
@@ -317,6 +317,7 @@ class AppMain extends React.Component {
       that.setState({showListView: true});
     })
     .fail(function onError(error) {
+      alert("Check your username & password, cannot authenticate.");
       console.log("PAS OK: "+JSON.stringify(error));
     });
   };
