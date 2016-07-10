@@ -55,6 +55,12 @@ app.get('/api/classes', function(req, res, next) {
   res.json(JSON.stringify(obj));
 });
 
+app.post('/api/addClass', function(req, res, next) {
+  var name = req.body.className;
+  setOfClasses.add(name);
+  res.send('Added class was successful!');
+});
+
 app.post('/api/trainer', function(req, res, next) {
   var that = this;
   var arrayOfLines=req.body.arrayOfLines;

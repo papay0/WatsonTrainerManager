@@ -50,6 +50,7 @@ class ListView extends React.Component {
 
   handleAddNewClassName = () => {
     if (this.state.newClassName !== '') {
+      this.addClassToApi(this.state.newClassName)
       var newArrayClasses = this.state.newClassesName;
       console.log("ARRRAYYYYYY: ", newArrayClasses);
       newArrayClasses.push(this.state.newClassName);
@@ -59,29 +60,31 @@ class ListView extends React.Component {
       var arrayClassesInitial = this.state.classes;
       arrayClassesInitial.push(this.state.newClassName);
       this.setState({newClassesName: newArrayClasses});
-      //this.setState({newClassesName: this.state.newClassesName.push(this.newClassName)});
       this.setState({classes: arrayClassesInitial});
       this.setState({newClassName: ''});
     }
   };
 
+  addClassToApi = (name) => {
+    $.post('/api/addClass', {className: name})
+    .done(function onSucess(answers){
+      console.log("[CLASS ADDED] OK: "+JSON.stringify(answers));
+    })
+    .fail(function onError(error) {
+      console.log("[CLASS NOT ADDED] PAS OK: "+JSON.stringify(error));
+    });
+
+  };
+
   handleMultipleChange = (value) => {
-    // var setClasses = new Set(value);
-    // console.log("SET 1: ", setClasses);
-    // setClasses.add(this.state.newClassName);
-    // console.log("SET 2: ", setClasses);
-    // var array = Array.from(setClasses);
-    // console.log("Classes name: ", array);
-    // console.log("test: ", this.state.test);
     this.setState({newClassesName: value});
   };
 
   saveClicked = () => {
-    //var name = this.state.newClassName;
     var names = this.state.newClassesName;
     var indexToAdd = this.state.addIndex;
     for (var i in names) {
-        this.state.db[indexToAdd][1].push([names[i]]);
+      this.state.db[indexToAdd][1].push([names[i]]);
     }
     this.setState({db: this.state.db});
     this.setState({dialogActive: !this.state.dialogActive});
@@ -178,22 +181,23 @@ class ListView extends React.Component {
     var listView = (
       <List selectable ripple>
       <Dialog
-        actions={this.actions}
-        active={this.state.dialogActive}
-        onEscKeyDown={this.cancelClicked}
-        onOverlayClick={this.cancelClicked}
-        title='Add class'>
-        <p> You are now able to add a class.</p>
-        <Input floating={false} type='text' label='Enter a new class name' name='new class' value={this.state.newClassName} onChange={this.handleChange.bind(this, 'newClassName')} multiline={false}/>
-          <Autocomplete
-            direction="down"
-            selectedPosition="above"
-            label="Choose an existing class"
-            onChange={this.handleMultipleChange}
-            source={this.state.classes}
-            value={this.state.newClassesName}
-            multiple={true}
-        />
+      actions={this.actions}
+      active={this.state.dialogActive}
+      onEscKeyDown={this.cancelClicked}
+      onOverlayClick={this.cancelClicked}
+      title='Add class'>
+      <p> You are now able to add a class.</p>
+      <Input floating={false} type='text' label='Enter a new class name' name='new class' value={this.state.newClassName} onChange={this.handleChange.bind(this, 'newClassName')} multiline={false}/>
+      <Autocomplete
+      direction="down"
+      selectedPosition="above"
+      label="Choose an existing class"
+      onChange={this.handleMultipleChange}
+      source={this.state.classes}
+      value={this.state.newClassesName}
+      multiple={true}
+      suggestionMatch={"anywhere"}
+      />
       </Dialog>
       <ListSubHeader caption='Sentences to train' />
       {DB}
