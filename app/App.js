@@ -27,7 +27,8 @@ class ListView extends React.Component {
     newClassName: '',
     addIndex: 0,
     classes: [],
-    newClassesName: []
+    newClassesName: [],
+    test: ''
   };
 
   handleDeleteClick = (indexChip, indexItem) => {
@@ -47,6 +48,34 @@ class ListView extends React.Component {
     console.log("Cancel clicked");
   };
 
+  handleAddNewClassName = () => {
+    if (this.state.newClassName !== '') {
+      var newArrayClasses = this.state.newClassesName;
+      console.log("ARRRAYYYYYY: ", newArrayClasses);
+      newArrayClasses.push(this.state.newClassName);
+      console.log("New array classes: ", newArrayClasses);
+
+
+      var arrayClassesInitial = this.state.classes;
+      arrayClassesInitial.push(this.state.newClassName);
+      this.setState({newClassesName: newArrayClasses});
+      //this.setState({newClassesName: this.state.newClassesName.push(this.newClassName)});
+      this.setState({classes: arrayClassesInitial});
+      this.setState({newClassName: ''});
+    }
+  };
+
+  handleMultipleChange = (value) => {
+    // var setClasses = new Set(value);
+    // console.log("SET 1: ", setClasses);
+    // setClasses.add(this.state.newClassName);
+    // console.log("SET 2: ", setClasses);
+    // var array = Array.from(setClasses);
+    // console.log("Classes name: ", array);
+    // console.log("test: ", this.state.test);
+    this.setState({newClassesName: value});
+  };
+
   saveClicked = () => {
     //var name = this.state.newClassName;
     var names = this.state.newClassesName;
@@ -57,7 +86,8 @@ class ListView extends React.Component {
     this.setState({db: this.state.db});
     this.setState({dialogActive: !this.state.dialogActive});
     console.log("save clicked");
-    this.setState({newClassesName: ''});
+    this.setState({newClassName: ''});
+    this.setState({newClassesName: []});
   };
 
   handleChange = (newClassName, value) => {
@@ -65,6 +95,7 @@ class ListView extends React.Component {
   };
 
   actions = [
+    { label: "Add", onClick: this.handleAddNewClassName },
     { label: "Cancel", onClick: this.cancelClicked },
     { label: "Save", onClick: this.saveClicked }
   ];
@@ -135,12 +166,8 @@ class ListView extends React.Component {
     });
   }
 
-  handleMultipleChange = (value) => {
-    console.log("Classes name: ", value);
-    this.setState({newClassesName: value});
-  };
-
   render () {
+    console.log("new classes name: ", this.state.newClassName);
     var that = this;
     var DB = this.state.db.map(function(info, index) {
       return (
@@ -157,10 +184,11 @@ class ListView extends React.Component {
         onOverlayClick={this.cancelClicked}
         title='Add class'>
         <p> You are now able to add a class.</p>
+        <Input floating={false} type='text' label='Enter a new class name' name='new class' value={this.state.newClassName} onChange={this.handleChange.bind(this, 'newClassName')} multiline={false}/>
           <Autocomplete
             direction="down"
             selectedPosition="above"
-            label="Choose a class"
+            label="Choose an existing class"
             onChange={this.handleMultipleChange}
             source={this.state.classes}
             value={this.state.newClassesName}
@@ -325,6 +353,8 @@ class AppMain extends React.Component {
   handleChange = (name, value) => {
     this.setState({...this.state, [name]: value});
   };
+
+
 
   handleSnackbarTimeoutOrClick = () => {
     console.log('handleSnackbarClick');
