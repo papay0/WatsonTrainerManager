@@ -20,6 +20,7 @@ var counter=0;
 var classifierNameNumber=0;
 var nextID="";
 var setOfClasses = new Set();
+var currentID = classifier_id;
 
 app.use(require('webpack-dev-middleware')(compiler, {
   noInfo: true,
@@ -47,12 +48,22 @@ sendToWatson = () => {
 
 app.get('/api/classes', function(req, res, next) {
   var obj = {};
-  // for (var i = 0; i < setOfClasses.size; i++) {
-  //   obj[i] = setOfClasses[i];
-  // }
   obj[0] = Array.from(setOfClasses);
   console.log("/api/classes: ", JSON.stringify(obj));
   res.json(JSON.stringify(obj));
+});
+
+app.get('/api/getListClassifier', function(req, res, next) {
+  nlClassifier.list({},
+  function(err, response) {
+    if (err)
+        console.log('error:', err);
+      else {
+        console.log("List classifier: "+JSON.stringify(response, null, 2));
+        res.json(response);
+      }
+  }
+);
 });
 
 app.post('/api/addClass', function(req, res, next) {
@@ -61,14 +72,22 @@ app.post('/api/addClass', function(req, res, next) {
   res.send('Added class was successful!');
 });
 
-app.post('/api/trainer', function(req, res, next) {
+app.post('/api/send_to_watson_and_it_will_train_for_2_hours', function(req, res, next) {
   var that = this;
   var arrayOfLines=req.body.arrayOfLines;
+  if (arrayOfLines == undefined) {
+    res.status(500).send('Oups, there is nothing to feed to watson');
+    return
+  }
+
   var line = "";
   var numberOfLines = arrayOfLines.length;
   var indexLineAppended = 0;
+
   for (var i = 0; i < numberOfLines; i++) {
     line = arrayOfLines[i];
+
+
     fs.appendFile('./training/training_data.csv',line+"\n",function(err){
       if (err) {
         console.log("ERROR APPENDING FILE");
@@ -88,6 +107,7 @@ app.post('/api/trainer', function(req, res, next) {
           if (err) {
             console.log("Error: "+JSON.stringify(err));
           } else {
+
             nextID = response.classifier_id;
             console.log("nextID: "+nextID);
             counter = 0;
@@ -97,11 +117,12 @@ app.post('/api/trainer', function(req, res, next) {
       }
     })
   }
-  res.send('Append was successful');
+
+  res.send('CALL api/watson ==> successful');
 });
 
-app.post('/api/watson', function(req, res, next) {
-  console.log("My set of classes: ", setOfClasses);
+app.post('/api/classify', function(req, res, next) {
+  //console.log("My set of classes: ", setOfClasses);
   var arrayMessages = req.body.text;
   var length = arrayMessages.length;
   var jsonObj = {};
@@ -109,7 +130,7 @@ app.post('/api/watson', function(req, res, next) {
   var final_length = length;
   var that = this;
 
-  if(nextID!=""){
+  if(nextID != ""){
     console.log("IN nextID");
     var statusOfNext;
     nlClassifier.status({ classifier_id: nextID },
@@ -117,8 +138,13 @@ app.post('/api/watson', function(req, res, next) {
         if (err) {
           console.log('error:', err);
         } else {
-          console.log(JSON.stringify(response, null, 2));
+          console.log("STATUS not error", JSON.stringify(response, null, 2));
           statusOfNext=response.status;
+          console.log("statusOfNext: ", statusOfNext);
+          if( statusOfNext == "Available" ) {
+            console.log("CHANGING CURRENT ID TO NEXT ID");
+            currentID=nextID;
+          }
         }
       }
     );
@@ -126,9 +152,6 @@ app.post('/api/watson', function(req, res, next) {
     console.log("NOT IN nextID");
   }
 
-  if( statusOfNext === "Available" ) {
-    currentID=nextID;
-  }
 
   for (i = 0; i < length; i++) {
     var message = arrayMessages[i];
@@ -137,10 +160,10 @@ app.post('/api/watson', function(req, res, next) {
       console.log("MESSAGE EMPTY");
       continue;
     } else {
-      console.log("MESSAGE: "+ message);
+      console.log("MESSAGE --> : "+ message);
     }
     var params = {
-      classifier: process.env.CLASSIFIER_ID || classifier_id, // pre-trained classifier
+      classifier: process.env.CLASSIFIER_ID || currentID, // pre-trained classifier
       text: arrayMessages[i]
     };
     nlClassifier.classify(params, function(err, results) {
@@ -159,7 +182,7 @@ app.post('/api/watson', function(req, res, next) {
 });
 
 keepTrackOfClassesForAjaxRequest = (ObjClasses, numberOfClasses) => {
-  console.log("ObjClasses: ",JSON.stringify(ObjClasses), " numberOfClasses: ", numberOfClasses);
+  //console.log("ObjClasses: ",JSON.stringify(ObjClasses), " numberOfClasses: ", numberOfClasses);
   var classes = [];
   var name = "";
   for (var i = 0; i < numberOfClasses; i++) {

@@ -71,6 +71,7 @@ class ListView extends React.Component {
       console.log("[CLASS ADDED] OK: "+JSON.stringify(answers));
     })
     .fail(function onError(error) {
+      alert(JSON.stringify(error));
       console.log("[CLASS NOT ADDED] PAS OK: "+JSON.stringify(error));
     });
 
@@ -103,7 +104,7 @@ class ListView extends React.Component {
     { label: "Save", onClick: this.saveClicked }
   ];
 
-  getArrayOfLines = (db) => {
+  getArrayOfLines2 = (db) => {
     var str_line = "";
     var message = "";
     var a_class = "";
@@ -123,8 +124,41 @@ class ListView extends React.Component {
             a_class = db_filter[i][1][j];
           }
           str_line += ","+a_class;
-          arrayOfLines.push(str_line);
+          if (a_class !== undefined) { // just in case the user deleted all the classes
+            arrayOfLines.push(str_line);
+          }
         }
+      }
+      //arrayOfLines.push(str_line);
+      //console.log("Line in file: "+str_line);
+    }
+    return arrayOfLines;
+  };
+
+  getArrayOfLines = (db) => {
+    var str_line = "";
+    var message = "";
+    var a_class = "";
+    var db_filter = db.filter(function(e){return e});
+    var arrayOfLines = [];
+    for (var i = 0; i < db_filter.length; i++) {
+      str_line = "";
+      message = "";
+      a_class = "";
+      message = db_filter[i][0];
+      str_line = "\""+message+"\"";
+      for (var j = 0; j < db_filter[i][1].length; j++) {
+        if (db_filter[i][1][j] !== undefined) {
+          if (db_filter[i][1][j].length > 1) {
+            a_class = db_filter[i][1][j][0];
+          } else {
+            a_class = db_filter[i][1][j];
+          }
+          str_line += ","+a_class;
+        }
+      }
+      if (a_class !== undefined) { // just in case the user deleted all the classes
+        arrayOfLines.push(str_line);
       }
       //arrayOfLines.push(str_line);
       //console.log("Line in file: "+str_line);
@@ -140,13 +174,15 @@ class ListView extends React.Component {
 
   sendArrayOfLinesToServer = (arrayOfLines) => {
     var that = this;
-    $.post('/api/trainer', {arrayOfLines: arrayOfLines})
+    $.post('/api/send_to_watson_and_it_will_train_for_2_hours', {arrayOfLines: arrayOfLines})
     .done(function onSucess(answers){
       console.log("OK: "+JSON.stringify(answers));
     })
     .fail(function onError(error) {
+      alert(JSON.stringify(error));
       console.log("PAS OK: "+JSON.stringify(error));
-    });
+    })
+    console.log("fghjkl");
   }
 
   componentWillReceiveProps (nextProps) {
@@ -165,6 +201,7 @@ class ListView extends React.Component {
       that.setState({classes: obj[0]});
     })
     .fail(function onError(error) {
+      alert(JSON.stringify(error));
       console.log("PAS OK: "+JSON.stringify(error));
     });
   }
@@ -319,11 +356,11 @@ class AppMain extends React.Component {
 
   sendPostRequestWithMessagesToTrain = (arrayMessages) => {
     var that = this;
-    $.post('/api/watson', {text: arrayMessages})
+    $.post('/api/classify', {text: arrayMessages})
     .done(function onSucess(answers){
       //var DB = new Array(arrayMessages.length);
       that.setState({activeSnackbar: true});
-      that.setState({messageSnapbar: 'Training successful'});
+      that.setState({messageSnapbar: 'Classify successful'});
       var DB = [];
       const NUMBER_CHIPS = 3;
       console.log("OK: "+JSON.stringify(answers));
@@ -365,6 +402,17 @@ class AppMain extends React.Component {
     this.setState({ activeSnackbar: false });
   };
 
+  getListClassifier = () => {
+    $.get('/api/getListClassifier')
+    .done(function onSucess(answers){
+      alert("List classifier: "+JSON.stringify(answers, null, 2));
+    })
+    .fail(function onError(error) {
+      alert(JSON.stringify(error));
+      console.log("PAS OK: "+JSON.stringify(error));
+    });
+  };
+
   render () {
     return (
       <div>
@@ -372,6 +420,7 @@ class AppMain extends React.Component {
       <section style={{ padding: 20 }}>
       <Input floating={false} type='text' label='Messages' name='Messages' value={this.state.messages} onChange={this.handleChange.bind(this, 'messages')} required multiline={true}/>
       <Button icon='send' label='Train it!' onClick={this.handleTrain} flat primary />
+      <Button icon='send' label='Get list classifier!' onClick={this.getListClassifier} flat />
       <ListView showListView={this.state.showListView} db={this.state.db} />
       </section>
       <Snackbar
